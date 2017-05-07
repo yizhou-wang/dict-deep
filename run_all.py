@@ -1,4 +1,5 @@
 import numpy as np
+import mlp_utils
 import c3d_utils
 
 
@@ -15,12 +16,11 @@ import c3d_utils
 
 
 # Put sparse features into simple neural networks
-
+model_mlp = mlp_utils.get_model(summary=True)
 
 
 # Put original video into C3D networks
-
-model = c3d_utils.get_model(summary=True)
+model_c3d = c3d_utils.get_model(summary=True)
 
 
 
