@@ -9,7 +9,7 @@
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-
+from scipy import stats
 # img1 = cv2.imread('box.png',0)          # queryImage
 # img2 = cv2.imread('box_in_scene.png',0) # trainImage
 
@@ -37,10 +37,11 @@ def readvideo(source):
 		
 		
 		if not retval:
-			print "Cannot capture frame device"
+			#print "Cannot capture frame device"
 			break
 		
 		#print type(img)
+		#image = rgb2gray(img)
 		imglist.append(img)
 		print '%s %s %s'%(i,'th','frame')
 		
@@ -50,9 +51,9 @@ def readvideo(source):
 
 def subseq(imglist, N_sq):
 	# N_sq is the number of subsequences.
-	N_frame = len(imglist)/N_sq
+	#N_frame = len(imglist)/N_sq
 
-	chunks = [imglist[x:x+N_frame] for x in range(0, len(imglist), N_frame)]
+	chunks = [imglist[x:x+N_sq] for x in range(0, len(imglist), N_sq)]
 	#print len(chunks[0]) # number of subsequences
 	#print imglist[0].shape
 	#print chunks[0][1].shape # the second subsequence
@@ -151,53 +152,64 @@ def kplocation(kp_frame):
 	for i in range(0, len(kp_frame)):
 		kp = kp_frame[i]
 		kp_xy = kp.pt
+		# tuple list
 		kploc_frame.append(kp_xy)
 	
 	return kploc_frame
 
-def kppatch(kploc_frame, img_frame):
+def kppatchfuc(kploc_frame, sub_video_seq):
 	# get patch around the keypoint.
+	kppatch = []
+	for i in range(0,len(kploc_frame)):
+		kploc_pt = kploc_frame[i]
+		patch_center = kploc_pt
+		patch_size = 24 # Note by Lingyu, increasing patch size will increasing accuracy
+		patch_x = patch_center[0] - patch_size/2
+		patch_y = patch_center[1] - patch_size/2
 
-	image = img_frame
-	#print type(image)
-	patch_frame = []
-	if image is not None:
-		
-		
-		for i in range(0, len(kploc_frame)):
-			kp_xy = kploc_frame[i]
-			patch_center = kp_xy
-			
-			patch_size = 2 # Note by Lingyu, increasing patch size will increasing accuracy
-			patch_x = patch_center[0] - patch_size/2
-			patch_y = patch_center[1] - patch_size/2
-			
+		sub_patch = []
+		for f in range(0, len(sub_video_seq)):
+			frame = rgb2gray(sub_video_seq[f])
+			#print frame.shape
+			patch_pt = frame[int(patch_y):int(patch_y+patch_size), int(patch_x):int(patch_x+patch_size)]
+			sub_patch.append(patch_pt)
 
-			#patch_pt = image[154:155, 183:184]
-			patch_pt = image[int(patch_x):int(patch_x+patch_size), int(patch_y):int(patch_y+patch_size)]
+			# if patch_pt.shape == (0,24):
+			# 	print patch_center, patch_x,patch_y
+			# 	exit()
+			#print patch_pt.shape
 
-			patch_frame.append(patch_pt)
-		
-
-	# patch_image = image[patch_x:patch_x+patch_size, patch_y:patch_y+patch_size]
-	# #patch_image = image[3:80, 6:83]
-
-	# plt.imshow(patch_image),plt.show()
-	# #cv2.imshow("patch_image", patch_image)
-
-	return patch_frame
-
-def motionpattern(patch_seq):
-	# for every subsequence.
-	N_frame = len(patch_seq)
-	N_patch = len(patch_seq[0])
-	for i in range(0, N_frame):
-		patchlist = patch_seq[i]
-		# for p in range(0, N_patch):
-		# 	patch_window = patchlist[p]
+		kppatch.append(sub_patch)
 
 	
-	return None
+
+	return kppatch
+
+def motionpattern(kppatch,N_sq):
+	k = len(kppatch)
+	for i in range(0,len(kppatch)):
+		# for ith keypoint
+		patch = kppatch[i]
+		# for ith keypoint, we have N_sq frames, so the dimentsion of patch is 24*24*N_sq
+		# We need to calculate central moments for this N_sq data which is 24*24
+		#print patch[0].shape
+		patch_array = np.zeros(shape=[24,24,N_sq])
+		for m in range(0,N_sq):
+			#print patch[m].shape
+			patch_array[:,:,m] = patch[m]
+		#print patch_array.shape
+		feature = np.zeros(shape=[k,24,24,3])
+		feature[i,:,:,0] = stats.moment(patch_array,moment=2,axis=2)
+
+		feature[i,:,:,1] = stats.moment(patch_array,moment=3,axis=2)
+
+		feature[i,:,:,2] = stats.moment(patch_array,moment=4,axis=2)
+
+	feature = np.reshape(feature,(k,1728))
+	print 'shape'
+	print feature.shape
+	scipy.io.savemat("./feature.mat", feature)
+	return feature
 
 
 def rgb2gray(rgb):
@@ -208,7 +220,7 @@ def centralmoment(imglist):
 
 	image = rgb2gray(img) 
 	feature = cv2.moments(image)
-	print feature
+	print feature.shape
 
 # def hog(imglist, seq_id):
 # 	winSize = (128,64)
@@ -299,12 +311,15 @@ if __name__ == '__main__':
 
 	imglist = readvideo("video.avi")
 	#matching(imglist)
+
+
+
 	N = len(imglist)
 	print '%s %s %s'%('total',N,'frames')
-	N_sq = 101
+	N_sq = N
 	video_seq = subseq(imglist, N_sq)
 	print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-	
+	print '%s %s %s'%('total',len(video_seq),'segments')
 	# # Whole keypoint list is kp_list
 	# kp_list = []
 	# # for each seq, extract keypoints.
@@ -313,58 +328,63 @@ if __name__ == '__main__':
 	# 	kp_list_seq =orbkeypoint(img_seq)
 	# 	kp_list.append(kp_list_seq)
 
-	kp_frame = orbkeypoint(imglist[0])
-	kploc_frame = kplocation(kp_frame)
+	# kp_frame = orbkeypoint(imglist[0])
+	# kploc_frame = kplocation(kp_frame)
+
+
 
 	# Extract patch for all the subsequence
 	patch = []
-
-	for i in range(0, N_sq):
+	#video_feature = np.zeros(shape=[])
+	for i in range(0, N/N_sq):
 		sub_video_seq = video_seq[i]
-		
+		kp_frame = orbkeypoint(sub_video_seq[0])
+		kploc_frame = kplocation(kp_frame)
+		kppatch = kppatchfuc(kploc_frame, sub_video_seq)
+		motionpattern(kppatch,N_sq)
 		
 		# feature = hog(sub_video_seq, i)
-		np.savetxt('/Users/lingyuzhang/Spring17/4HighDimension/finalproject/ActionLocalization_finalproj/Feature_seq/Descr_' + str(i) + '.mat',feature)
+		#np.savetxt('/Users/lingyuzhang/Spring17/4HighDimension/finalproject/ActionLocalization_finalproj/Feature_seq/Descr_' + str(i) + '.mat',feature)
 	
 
 		#Extract patch for all the other frames in each subsequence
 		
-		sub_patch_seq = []
+	# 	sub_patch_seq = []
 
-		# if i == 0:
-		# 	start = 1
-		# else:
-		# 	start = 0
+	# 	# if i == 0:
+	# 	# 	start = 1
+	# 	# else:
+	# 	# 	start = 0
 
-		for f in range(0, N/N_sq):
-			img_frame = sub_video_seq[f]
-			patch_frame = kppatch(kploc_frame, img_frame)
-			sub_patch_seq.append(patch_frame)
+	# 	for f in range(0, N_sq):
+	# 		img_frame = sub_video_seq[f]
+	# 		patch_frame = kppatch(kploc_frame, img_frame)
+	# 		sub_patch_seq.append(patch_frame)
 		
-		patch.append(sub_patch_seq)
-	# print len(patch)
-	# get feature for each subsequence
-	feature = []
-	for i in range(0, N_sq):
-		video_seq[i]
-		patch_gray_seq = []
-		#print type(patch[i])
-		for f in range(0, len(patch[i])):
-			patch_gray_frame = []
-			for psingle in range(0, len(patch[i][f])):
-				patch_frame_gray = rgb2gray((patch[i])[f][psingle])
-				patch_gray_frame.append(patch_frame_gray)
-			patch_gray_seq.append(patch_gray_frame)
+	# 	patch.append(sub_patch_seq)
+	# # print len(patch)
+	# # get feature for each subsequence
+	# feature = []
+	# for i in range(0, N/N_sq):
+	# 	video_seq[i]
+	# 	patch_gray_seq = []
+	# 	#print type(patch[i])
+	# 	for f in range(0, len(patch[i])):
+	# 		patch_gray_frame = []
+	# 		for psingle in range(0, len(patch[i][f])):
+	# 			patch_frame_gray = rgb2gray((patch[i])[f][psingle])
+	# 			patch_gray_frame.append(patch_frame_gray)
+	# 		patch_gray_seq.append(patch_gray_frame)
 
-		feature_seq = motionpattern(patch_gray_seq)
+	# 	feature_seq = motionpattern(patch_gray_seq)
 
-	# hog(imglist)
-	# 	# print len(sub_video_seq)
-	# 	feature_seq = motionpattern(patch, sub_video_seq, kp_frame, N_sq, N/N_sq)
-	# 	feature.append(feature_seq)
-	# centralmoment(imglist)
-	# subseq(imglist,2)
-	# kppatch(0)
+	# # hog(imglist)
+	# # 	# print len(sub_video_seq)
+	# # 	feature_seq = motionpattern(patch, sub_video_seq, kp_frame, N_sq, N/N_sq)
+	# # 	feature.append(feature_seq)
+	# # centralmoment(imglist)
+	# # subseq(imglist,2)
+	# # kppatch(0)
 
 
 
