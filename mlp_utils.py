@@ -15,18 +15,18 @@ def get_model(summary=False, backend='tf'):
     """
     model = Sequential()
     if backend == 'tf':
-        input_shape=(256,) # l, h, w, c
+        input_shape=(256 * 2,) # l, h, w, c
     else:
-        input_shape=(256,) # c, l, h, w
+        input_shape=(256 * 2,) # c, l, h, w
 
     # FC layers group
     model.add(BatchNormalization(input_shape=input_shape, axis=-1, momentum=0.99, epsilon=0.001, center=True))
     model.add(Dense(2048, activation='relu', name='fc1'))
     model.add(Dropout(.3))
-    # model.add(Dense(1024, activation='relu', name='fc2'))
-    # model.add(Dropout(.3))
-    # model.add(Dense(1024, activation='relu', name='fc3'))
-    # model.add(Dropout(.3))
+    model.add(Dense(512, activation='relu', name='fc2'))
+    model.add(Dropout(.3))
+    model.add(Dense(256, activation='relu', name='fc3'))
+    model.add(Dropout(.3))
     model.add(Dense(10, activation='softmax', name='softmax'))
 
     if summary:

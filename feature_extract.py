@@ -198,6 +198,7 @@ if __name__ == '__main__':
 	dataset_name = 'weizmann'
 	root_dir = '../dataset/' + dataset_name + '/'
 
+	
 	cat_folders = [f for f in listdir(root_dir) if not isfile(join(root_dir, f))]
 	print cat_folders
 
@@ -207,45 +208,85 @@ if __name__ == '__main__':
 		print cat_dir
 
 		video_dirs = []
-		for video in os.listdir(cat_dir):
-			print video
+		name_list = sorted(os.listdir(cat_dir))
+		video_name_list = []
+		for video in name_list:
 			if video.endswith(".avi"):
-				video_name = video.split('.')[0]
-				cur_video_dir = os.path.join(cat_dir, video)
-				video_dirs.append(cur_video_dir)
+				video_name_list.append(video)
 
-				print 'Reading Video ...'
-				imglist = readvideo(cur_video_dir)
-				print video + 'Read!'
-				#matching(imglist)
+		# For training videos
+		for video in video_name_list[:-1]:
+			print 'Working on', video
+			video_name = video.split('.')[0]
+			cur_video_dir = os.path.join(cat_dir, video)
+			video_dirs.append(cur_video_dir)
 
-
-				N = len(imglist)
-				print '%s %s %s'%('total',N,'frames')
-				N_sq = N
-				video_seq = subseq(imglist, N_sq)
-				print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-				print '%s %s %s'%('total',len(video_seq),'segments')
+			imglist = readvideo(cur_video_dir)
+			print video, 'Read!'
+			#matching(imglist)
 
 
-				# Extract patch for all the subsequence
-				patch = []
-				#video_feature = np.zeros(shape=[])
-				for i in range(0, N/N_sq):
-					sub_video_seq = video_seq[i]
-					kp_frame = orbkeypoint(sub_video_seq[0])
-					kploc_frame = kplocation(kp_frame)
-					kppatch = kppatchfuc(kploc_frame, sub_video_seq)
-					feature = motionpattern(kppatch,N_sq)
+			N = len(imglist)
+			print '%s %s %s'%('total',N,'frames')
+			N_sq = N
+			video_seq = subseq(imglist, N_sq)
+			print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
+			print '%s %s %s'%('total',len(video_seq),'segments')
 
-					mat_dir = '../results/' + dataset_name + '_features/'
-					if not os.path.exists(mat_dir):
-						os.makedirs(mat_dir)
-					mat_name = mat_dir + video_name + '.mat'
-					scipy.io.savemat(mat_name, {"feature": feature})
 
-					print 'MAT:' + mat_name + 'saved!'
-			
+			# Extract patch for all the subsequence
+			patch = []
+			for i in range(0, N / N_sq):
+				sub_video_seq = video_seq[i]
+				kp_frame = orbkeypoint(sub_video_seq[0])
+				kploc_frame = kplocation(kp_frame)
+				kppatch = kppatchfuc(kploc_frame, sub_video_seq)
+				feature = motionpattern(kppatch,N_sq)
+
+				mat_dir = '../results/' + dataset_name + '_features/'
+				if not os.path.exists(mat_dir):
+					os.makedirs(mat_dir)
+				mat_name = mat_dir + video_name + '_train.mat'
+				scipy.io.savemat(mat_name, {"feature": feature})
+
+				print 'MAT:', mat_name, 'saved!'
+		
+		# For test video
+		video = video_name_list[-1]
+		print 'Working on', video
+		video_name = video.split('.')[0]
+		cur_video_dir = os.path.join(cat_dir, video)
+		video_dirs.append(cur_video_dir)
+
+		imglist = readvideo(cur_video_dir)
+		print video, 'Read!'
+		#matching(imglist)
+
+
+		N = len(imglist)
+		print '%s %s %s'%('total',N,'frames')
+		N_sq = N
+		video_seq = subseq(imglist, N_sq)
+		print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
+		print '%s %s %s'%('total',len(video_seq),'segments')
+
+
+		# Extract patch for all the subsequence
+		patch = []
+		for i in range(0, N / N_sq):
+			sub_video_seq = video_seq[i]
+			kp_frame = orbkeypoint(sub_video_seq[0])
+			kploc_frame = kplocation(kp_frame)
+			kppatch = kppatchfuc(kploc_frame, sub_video_seq)
+			feature = motionpattern(kppatch,N_sq)
+
+			mat_dir = '../results/' + dataset_name + '_features/'
+			if not os.path.exists(mat_dir):
+				os.makedirs(mat_dir)
+			mat_name = mat_dir + video_name + '_test.mat'
+			scipy.io.savemat(mat_name, {"feature": feature})
+
+			print 'MAT:', mat_name, 'saved!'
 
 
 
