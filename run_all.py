@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile, join
 
 import numpy as np
-from scipy.io import loadmat
+import scipy.io
 
 import ksvd
 from ksvd import ApproximateKSVD
@@ -11,44 +11,47 @@ import mlp_utils
 import c3d_utils
 
 
-## Initialization ##
+dataset_name = 'weizmann'
+root_dir = '../results/' + dataset_name + '_features/'
 
 
-## Read videos ##
-
-
-## Feature extraction ##
+## Dictionary learning ##
 
 files = []
-for file in os.listdir('./Feature_seq'):
+for file in os.listdir(root_dir):
     if file.endswith(".mat"):
-        files.append(os.path.join('./Feature_seq', file))
+        files.append(os.path.join(root_dir, file))
 
-print(files)
+# print(files)
 
-first_time = True
+# first_time = True
+Descr = []
 for file in files:
-    if first_time:
-        Descr = np.loadtxt(file)
-        print(Descr.shape)
-        first_time = False
-    else:
-        tmp = np.loadtxt(file)
-        print(tmp.shape)
-        Descr = np.concatenate((Descr, tmp), axis=0)
+    descr = scipy.io.loadmat(file)['feature']
+    print(descr)
+    Descr.append(descr)
 
-print(Descr.shape)
-# print(Descr)
+    # if first_time:
+    #     Descr = scipy.io.loadmat(file)['feature']
+    #     # print(Descr.shape)
+    #     first_time = False
+    # else:
+    #     tmp = scipy.io.loadmat(file)['feature']
+    #     print(tmp.shape)
+    #     Descr = np.concatenate((Descr, tmp), axis=0)
+
+print(len(Descr))
 
 
-# ## Dictionary learning ##
+## Dictionary Learning:
 
-# # SAMPLE CODE FOR Dictionary Learning:
-# X = Training data 
-# n_components = param
-# aksvd = ApproximateKSVD(n_components=128)
-# dictionary = aksvd.fit(X).components_
-# gamma = aksvd.transform(X)
+n_components = 12
+for X in Descr:
+    aksvd = ApproximateKSVD(n_components=n_components)
+    dictionary = aksvd.fit(X).components_
+    gamma = aksvd.transform(X)
+
+    print(gamma.shape)
 
 
 # ## Put sparse features into simple neural networks ##

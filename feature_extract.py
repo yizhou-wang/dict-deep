@@ -194,9 +194,9 @@ def centralmoment(imglist):
 
 if __name__ == '__main__':
 
-
 	dataset_name = 'weizmann'
-	root_dir = '../dataset/weizmann/'
+	root_dir = '../dataset/' + dataset_name + '/'
+
 	cat_folders = [f for f in listdir(root_dir) if not isfile(join(root_dir, f))]
 	print cat_folders
 
