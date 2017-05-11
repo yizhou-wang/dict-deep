@@ -242,7 +242,7 @@ if __name__ == '__main__':
 					if not os.path.exists(mat_dir):
 						os.makedirs(mat_dir)
 					mat_name = mat_dir + video_name + '.mat'
-					scipy.io.savemat(mat_name, {"feature":feature})
+					scipy.io.savemat(mat_name, {"feature": feature})
 
 					print 'MAT:' + mat_name + 'saved!'
 			
