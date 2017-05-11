@@ -237,7 +237,7 @@ if __name__ == '__main__':
 					kppatch = kppatchfuc(kploc_frame, sub_video_seq)
 					feature = motionpattern(kppatch,N_sq)
 
-					mat_dir = '../dataset/' + dataset_name + '_features/'
+					mat_dir = '../results/' + dataset_name + '_features/'
 					if not os.path.exists(mat_dir):
 						os.makedirs(mat_dir)
 					mat_name = mat_dir + video_name + '.mat'
