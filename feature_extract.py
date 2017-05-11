@@ -153,23 +153,24 @@ def kppatchfuc(kploc_frame, sub_video_seq):
 	return kppatch
 
 def motionpattern(kppatch,N_sq):
+
 	k = len(kppatch)
+	patch_array = np.zeros(shape=[24,24,N_sq])
+	feature = np.zeros(shape=[k,24,24,3])
 	for i in range(0,len(kppatch)):
 		# for ith keypoint
 		patch = kppatch[i]
 		# for ith keypoint, we have N_sq frames, so the dimentsion of patch is 24*24*N_sq
 		# We need to calculate central moments for this N_sq data which is 24*24
 		#print patch[0].shape
-		patch_array = np.zeros(shape=[24,24,N_sq])
+		
 		for m in range(0,N_sq):
 			#print patch[m].shape
 			patch_array[:,:,m] = patch[m]
 		#print patch_array.shape
-		feature = np.zeros(shape=[k,24,24,3])
+		
 		feature[i,:,:,0] = stats.moment(patch_array,moment=2,axis=2)
-
 		feature[i,:,:,1] = stats.moment(patch_array,moment=3,axis=2)
-
 		feature[i,:,:,2] = stats.moment(patch_array,moment=4,axis=2)
 
 	feature = np.reshape(feature,(k,1728))
@@ -182,12 +183,12 @@ def motionpattern(kppatch,N_sq):
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
-def centralmoment(imglist):
-	img = imglist[0]
+# def centralmoment(imglist):
+# 	img = imglist[0]
 
-	image = rgb2gray(img) 
-	feature = cv2.moments(image)
-	print feature.shape
+# 	image = rgb2gray(img) 
+# 	feature = cv2.moments(image)
+# 	print feature.shape
 
 
 
