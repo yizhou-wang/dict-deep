@@ -127,9 +127,8 @@ for label, Y1, Y2 in zip(weizmann_label_dic, Descr, test_Descr):
    
 
     aksvd = ApproximateKSVD(n_components=n_components, transform_n_nonzero_coefs=transform_n_nonzero_coefs)
-    D1 = aksvd.fit(Y1).components_
+    D = aksvd.fit(Y1).components_
     X1 = aksvd.transform(Y1)
-    D2 = aksvd.fit(Y2).components_
     X2 = aksvd.transform(Y2)
 
     print('* ----------------------------- *')

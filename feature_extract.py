@@ -66,49 +66,49 @@ def subseq(imglist, N_sq):
 
 def orbkeypoint(img_frame):
 
-	orb = cv2.ORB()
+	orb = cv2.ORB(edgeThreshold=12, nfeatures=100)
 
 	current_image = img_frame
-	print '%s %s %s'%('original','dimension',current_image.shape)
+	# print '%s %s %s'%('original','dimension',current_image.shape)
 	kp1, des1 = orb.detectAndCompute(current_image,None)
 	# kp1 is list
 	
 	return kp1
 
 
-def matching(imglist):
-	orb = cv2.ORB_create()
-	img1 = imglist[0]
-	img2 = imglist[1]
-	# find the keypoints and descriptors with SIFT
-	kp1, des1 = orb.detectAndCompute(img1,None)
-	kp2, des2 = orb.detectAndCompute(img2,None)
+# def matching(imglist):
+# 	orb = cv2.ORB_create()
+# 	img1 = imglist[0]
+# 	img2 = imglist[1]
+# 	# find the keypoints and descriptors with SIFT
+# 	kp1, des1 = orb.detectAndCompute(img1,None)
+# 	kp2, des2 = orb.detectAndCompute(img2,None)
 
-	# print des1
-	# print des2
-	# des1, des2 are the feature descriptors of keypoint
+# 	# print des1
+# 	# print des2
+# 	# des1, des2 are the feature descriptors of keypoint
 
-	# point keypoint location.
-	print kp1[0].pt
+# 	# point keypoint location.
+# 	print kp1[0].pt
 
-	print '%s %s %s'%('has',len(kp1),'keypoints')
-	print '%s %s %s'%('has',len(kp2),'keypoints')
+# 	print '%s %s %s'%('has',len(kp1),'keypoints')
+# 	print '%s %s %s'%('has',len(kp2),'keypoints')
 	
-	#print type(kp1)
+# 	#print type(kp1)
 
-	# create BFMatcher object
-	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+# 	# create BFMatcher object
+# 	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
-	# Match descriptors.
-	matches = bf.match(des1,des2)
+# 	# Match descriptors.
+# 	matches = bf.match(des1,des2)
 
-	# Sort them in the order of their distance.
-	#matches = sorted(matches, key = lambda x:x.distance)
+# 	# Sort them in the order of their distance.
+# 	#matches = sorted(matches, key = lambda x:x.distance)
 
-	# Draw first 10 matches.
-	img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:50], None,flags=2)
+# 	# Draw first 10 matches.
+# 	img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:50], None,flags=2)
 
-	plt.imshow(img3),plt.show()
+# 	plt.imshow(img3),plt.show()
 	
 
 
@@ -174,8 +174,8 @@ def motionpattern(kppatch,N_sq):
 		feature[i,:,:,2] = stats.moment(patch_array,moment=4,axis=2)
 
 	feature = np.reshape(feature,(k,1728))
-	print 'shape'
-	print feature.shape
+	# print 'shape'
+	# print feature.shape
 	
 	return feature
 
@@ -195,10 +195,11 @@ def rgb2gray(rgb):
 
 if __name__ == '__main__':
 
-	dataset_name = 'weizmann'
+	# dataset_name = 'weizmann'
+	dataset_name = 'kth'
 	root_dir = '../dataset/' + dataset_name + '/'
+	N_sq = 16
 
-	
 	cat_folders = [f for f in listdir(root_dir) if not isfile(join(root_dir, f))]
 	print cat_folders
 
@@ -214,8 +215,53 @@ if __name__ == '__main__':
 			if video.endswith(".avi"):
 				video_name_list.append(video)
 
-		# For training videos
-		for video in video_name_list[:-1]:
+		if dataset_name == 'weizmann':
+			# For training videos
+			for video in video_name_list[:-1]:
+				print 'Working on', video
+				video_name = video.split('.')[0]
+				cur_video_dir = os.path.join(cat_dir, video)
+				video_dirs.append(cur_video_dir)
+
+				imglist = readvideo(cur_video_dir)
+				print video, 'Read!'
+				#matching(imglist)
+
+
+				N = len(imglist)
+				print '%s %s %s'%('total',N,'frames')
+				
+				video_seq = subseq(imglist, N_sq)
+				print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
+				print '%s %s %s'%('total',len(video_seq),'segments')
+
+
+				# Extract patch for all the subsequence
+				patch = []
+				feature = ['EMPTY']
+				for i in range(0, N / N_sq):
+					sub_video_seq = video_seq[i]
+					kp_frame = orbkeypoint(sub_video_seq[0])
+					kploc_frame = kplocation(kp_frame)
+					kppatch = kppatchfuc(kploc_frame, sub_video_seq)
+					feature = motionpattern(kppatch,N_sq)
+
+					try:
+						feature = np.concatenate((feature, f), axis=0)
+					except:
+						feature = f
+
+				mat_dir = '../results/' + dataset_name + '_features/'
+				if not os.path.exists(mat_dir):
+					os.makedirs(mat_dir)
+				mat_name = mat_dir + video_name + '_train.mat'
+				scipy.io.savemat(mat_name, {"feature": feature})
+
+				print 'feature.shape:', feature.shape
+				print 'MAT:', mat_name, 'saved!'
+			
+			# For test video
+			video = video_name_list[-1]
 			print 'Working on', video
 			video_name = video.split('.')[0]
 			cur_video_dir = os.path.join(cat_dir, video)
@@ -228,7 +274,7 @@ if __name__ == '__main__':
 
 			N = len(imglist)
 			print '%s %s %s'%('total',N,'frames')
-			N_sq = N
+
 			video_seq = subseq(imglist, N_sq)
 			print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
 			print '%s %s %s'%('total',len(video_seq),'segments')
@@ -236,57 +282,76 @@ if __name__ == '__main__':
 
 			# Extract patch for all the subsequence
 			patch = []
+			feature = ['EMPTY']
 			for i in range(0, N / N_sq):
 				sub_video_seq = video_seq[i]
 				kp_frame = orbkeypoint(sub_video_seq[0])
 				kploc_frame = kplocation(kp_frame)
 				kppatch = kppatchfuc(kploc_frame, sub_video_seq)
-				feature = motionpattern(kppatch,N_sq)
+				f = motionpattern(kppatch,N_sq)
 
-				mat_dir = '../results/' + dataset_name + '_features/'
-				if not os.path.exists(mat_dir):
-					os.makedirs(mat_dir)
-				mat_name = mat_dir + video_name + '_train.mat'
-				scipy.io.savemat(mat_name, {"feature": feature})
+				try:
+					feature = np.concatenate((feature, f), axis=0)
+				except:
+					feature = f
 
-				print 'MAT:', mat_name, 'saved!'
-		
-		# For test video
-		video = video_name_list[-1]
-		print 'Working on', video
-		video_name = video.split('.')[0]
-		cur_video_dir = os.path.join(cat_dir, video)
-		video_dirs.append(cur_video_dir)
-
-		imglist = readvideo(cur_video_dir)
-		print video, 'Read!'
-		#matching(imglist)
-
-
-		N = len(imglist)
-		print '%s %s %s'%('total',N,'frames')
-		N_sq = N
-		video_seq = subseq(imglist, N_sq)
-		print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-		print '%s %s %s'%('total',len(video_seq),'segments')
-
-
-		# Extract patch for all the subsequence
-		patch = []
-		for i in range(0, N / N_sq):
-			sub_video_seq = video_seq[i]
-			kp_frame = orbkeypoint(sub_video_seq[0])
-			kploc_frame = kplocation(kp_frame)
-			kppatch = kppatchfuc(kploc_frame, sub_video_seq)
-			feature = motionpattern(kppatch,N_sq)
 
 			mat_dir = '../results/' + dataset_name + '_features/'
 			if not os.path.exists(mat_dir):
 				os.makedirs(mat_dir)
 			mat_name = mat_dir + video_name + '_test.mat'
 			scipy.io.savemat(mat_name, {"feature": feature})
-
+			print 'feature.shape:', feature.shape
 			print 'MAT:', mat_name, 'saved!'
+
+		if dataset_name == 'kth':
+			# For training videos
+			for video in video_name_list:
+				print 'Working on', video
+				video_name = video.split('.')[0]
+				num = video_name.split('_')[2]
+				cur_video_dir = os.path.join(cat_dir, video)
+				video_dirs.append(cur_video_dir)
+
+				imglist = readvideo(cur_video_dir)
+				print video, 'Read!'
+				#matching(imglist)
+
+				N = len(imglist)
+				print '%s %s %s'%('total',N,'frames')
+
+				video_seq = subseq(imglist, N_sq)
+				print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
+				print '%s %s %s'%('total',len(video_seq),'segments')
+
+
+				# Extract patch for all the subsequence
+				patch = []
+				feature = ['EMPTY']
+				for i in range(0, N / N_sq):
+					sub_video_seq = video_seq[i]
+					kp_frame = orbkeypoint(sub_video_seq[0])
+					kploc_frame = kplocation(kp_frame)
+					kppatch = kppatchfuc(kploc_frame, sub_video_seq)
+					f = motionpattern(kppatch,N_sq)
+
+					try:
+						feature = np.concatenate((feature, f), axis=0)
+					except:
+						feature = f
+
+				mat_dir = '../results/' + dataset_name + '_features/'
+				if not os.path.exists(mat_dir):
+					os.makedirs(mat_dir)
+
+				if num != 'd4':	
+					mat_name = mat_dir + video_name + '_train.mat'
+				else:
+					mat_name = mat_dir + video_name + '_test.mat'
+
+				scipy.io.savemat(mat_name, {"feature": feature})
+				print 'feature.shape:', feature.shape
+				print 'MAT:', mat_name, 'saved!'
 
 
 
