@@ -66,7 +66,7 @@ def subseq(imglist, N_sq):
 
 def orbkeypoint(img_frame):
 
-	orb = cv2.ORB(edgeThreshold=12, nfeatures=100)
+	orb = cv2.ORB(edgeThreshold=12, nfeatures=50)
 
 	current_image = img_frame
 	# print '%s %s %s'%('original','dimension',current_image.shape)
@@ -195,8 +195,8 @@ def rgb2gray(rgb):
 
 if __name__ == '__main__':
 
-	# dataset_name = 'weizmann'
-	dataset_name = 'kth'
+	dataset_name = 'weizmann'
+	# dataset_name = 'kth'
 	root_dir = '../dataset/' + dataset_name + '/'
 	N_sq = 16
 
@@ -218,22 +218,21 @@ if __name__ == '__main__':
 		if dataset_name == 'weizmann':
 			# For training videos
 			for video in video_name_list[:-1]:
-				print 'Working on', video
+				print 'Working on', video, '...'
 				video_name = video.split('.')[0]
 				cur_video_dir = os.path.join(cat_dir, video)
 				video_dirs.append(cur_video_dir)
 
 				imglist = readvideo(cur_video_dir)
-				print video, 'Read!'
+				# print video, 'Read!'
 				#matching(imglist)
 
 
 				N = len(imglist)
-				print '%s %s %s'%('total',N,'frames')
-				
 				video_seq = subseq(imglist, N_sq)
-				print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-				print '%s %s %s'%('total',len(video_seq),'segments')
+				print '%s %s %s'%('  Total',N,'frames')
+				print '%s %s %s'%('  videoseq',len(video_seq[0]),'frames')
+				print '%s %s %s'%('  Total',len(video_seq),'segments')
 
 
 				# Extract patch for all the subsequence
@@ -244,8 +243,8 @@ if __name__ == '__main__':
 					kp_frame = orbkeypoint(sub_video_seq[0])
 					kploc_frame = kplocation(kp_frame)
 					kppatch = kppatchfuc(kploc_frame, sub_video_seq)
-					feature = motionpattern(kppatch,N_sq)
-
+					f = motionpattern(kppatch,N_sq)
+					# print 'test!!!'
 					try:
 						feature = np.concatenate((feature, f), axis=0)
 					except:
@@ -262,7 +261,7 @@ if __name__ == '__main__':
 			
 			# For test video
 			video = video_name_list[-1]
-			print 'Working on', video
+			print 'Working on', video, '...'
 			video_name = video.split('.')[0]
 			cur_video_dir = os.path.join(cat_dir, video)
 			video_dirs.append(cur_video_dir)
@@ -273,11 +272,10 @@ if __name__ == '__main__':
 
 
 			N = len(imglist)
-			print '%s %s %s'%('total',N,'frames')
-
 			video_seq = subseq(imglist, N_sq)
-			print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-			print '%s %s %s'%('total',len(video_seq),'segments')
+			print '%s %s %s'%('  Total',N,'frames')
+			print '%s %s %s'%('  videoseq',len(video_seq[0]),'frames')
+			print '%s %s %s'%('  Total',len(video_seq),'segments')
 
 
 			# Extract patch for all the subsequence
@@ -307,7 +305,7 @@ if __name__ == '__main__':
 		if dataset_name == 'kth':
 			# For training videos
 			for video in video_name_list:
-				print 'Working on', video
+				print 'Working on', video, '...'
 				video_name = video.split('.')[0]
 				num = video_name.split('_')[2]
 				cur_video_dir = os.path.join(cat_dir, video)
@@ -318,11 +316,10 @@ if __name__ == '__main__':
 				#matching(imglist)
 
 				N = len(imglist)
-				print '%s %s %s'%('total',N,'frames')
-
 				video_seq = subseq(imglist, N_sq)
-				print '%s %s %s'%('videoseq',len(video_seq[0]),'frames')
-				print '%s %s %s'%('total',len(video_seq),'segments')
+				print '%s %s %s'%('  Total',N,'frames')
+				print '%s %s %s'%('  videoseq',len(video_seq[0]),'frames')
+				print '%s %s %s'%('  Total',len(video_seq),'segments')
 
 
 				# Extract patch for all the subsequence

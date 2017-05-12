@@ -10,9 +10,12 @@ from ksvd import ApproximateKSVD
 
 
 dataset_name = 'weizmann'
+# dataset_name = 'kth'
 root_dir = '../results/' + dataset_name + '_features/'
-weizmann_label_dic = [ 'bend', 'jack', 'jump', 'pjump', 'run', 'side', 'skip', 'walk', 'wave1', 'wave2' ]
-weizmann_label_num = len(weizmann_label_dic)
+label_dic = [ 'bend', 'jack', 'jump', 'pjump', 'run', 'side', 'skip', 'walk', 'wave1', 'wave2' ]
+label_dic_num = len(label_dic)
+# label_dic = [ 'boxing', 'handclapping', 'handwaving', 'jogging', 'running', 'walking' ]
+# label_dic_num = len(label_dic)
 
 
 ## Reading Features ##
@@ -35,15 +38,15 @@ for file in os.listdir(root_dir):
 # print(test_files)
 # print(test_labels)
 
-Descr = ['EMPTY'] * weizmann_label_num
+print('Loading Training Data ...')
+Descr = ['EMPTY'] * label_dic_num
 # print(Descr)
 for file, label in zip(train_files, train_labels):
-
     # print(file, label)
     try:
-        label_num = weizmann_label_dic.index(label)
+        label_num = label_dic.index(label)
     except:
-        label_num = weizmann_label_dic.index(label[0:-1])
+        label_num = label_dic.index(label[0:-1])
     # print(label_num)
 
     descr = scipy.io.loadmat(file)['feature']
@@ -54,15 +57,15 @@ for file, label in zip(train_files, train_labels):
     except:
         Descr[label_num] = descr
 
-
-test_Descr = ['EMPTY'] * weizmann_label_num
+print('Loading Test Data ...')
+test_Descr = ['EMPTY'] * label_dic_num
+print(test_Descr)
 for file, label in zip(test_files, test_labels):
-
     # print(file, label)
     try:
-        label_num = weizmann_label_dic.index(label)
+        label_num = label_dic.index(label)
     except:
-        label_num = weizmann_label_dic.index(label[0:-1])
+        label_num = label_dic.index(label[0:-1])
     # print(label_num)
 
     descr = scipy.io.loadmat(file)['feature']
@@ -76,27 +79,11 @@ for file, label in zip(test_files, test_labels):
 
 print('Number of Classes:', len(Descr))
 print('* ----------------------------- *')
-print('Descr[0].shape', Descr[0].shape)
-print('Descr[1].shape', Descr[1].shape)
-print('Descr[2].shape', Descr[2].shape)
-print('Descr[3].shape', Descr[3].shape)
-print('Descr[4].shape', Descr[4].shape)
-print('Descr[5].shape', Descr[5].shape)
-print('Descr[6].shape', Descr[6].shape)
-print('Descr[7].shape', Descr[7].shape)
-print('Descr[8].shape', Descr[8].shape)
-print('Descr[9].shape', Descr[9].shape)
+for d in Descr:
+    print('Descr.shape', d.shape)
 print('* ----------------------------- *')
-print('test_Descr[0].shape', test_Descr[0].shape)
-print('test_Descr[1].shape', test_Descr[1].shape)
-print('test_Descr[2].shape', test_Descr[2].shape)
-print('test_Descr[3].shape', test_Descr[3].shape)
-print('test_Descr[4].shape', test_Descr[4].shape)
-print('test_Descr[5].shape', test_Descr[5].shape)
-print('test_Descr[6].shape', test_Descr[6].shape)
-print('test_Descr[7].shape', test_Descr[7].shape)
-print('test_Descr[8].shape', test_Descr[8].shape)
-print('test_Descr[9].shape', test_Descr[9].shape)
+for d in test_Descr:
+    print('test_Descr.shape', d.shape)
 print('* ----------------------------- *')
 
 
@@ -112,7 +99,7 @@ if not os.path.exists(mat_dir):
     os.makedirs(mat_dir)
 
 
-for label, Y1, Y2 in zip(weizmann_label_dic, Descr, test_Descr):
+for label, Y1, Y2 in zip(label_dic, Descr, test_Descr):
 
     print('Learning', label, '...')
 

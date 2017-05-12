@@ -10,7 +10,7 @@ dim_ordering issue:
 - 'tf'-style dim_ordering: [batch, depth, height, width, channels]
 '''
 
-def get_model(summary=False, backend='tf'):
+def get_model(summary=False, backend='tf', class_num=10):
     """ Return the Keras model of the network
     """
     model = Sequential()
@@ -21,13 +21,13 @@ def get_model(summary=False, backend='tf'):
 
     # FC layers group
     model.add(BatchNormalization(input_shape=input_shape, axis=-1, momentum=0.99, epsilon=0.001, center=True))
-    model.add(Dense(2048, activation='relu', name='fc1'))
+    model.add(Dense(4096, activation='relu', name='fc1'))
     model.add(Dropout(.3))
-    # model.add(Dense(512, activation='relu', name='fc2'))
-    # model.add(Dropout(.3))
+    model.add(Dense(2048, activation='relu', name='fc2'))
+    model.add(Dropout(.3))
     # model.add(Dense(256, activation='relu', name='fc3'))
     # model.add(Dropout(.3))
-    model.add(Dense(10, activation='softmax', name='softmax'))
+    model.add(Dense(class_num, activation='softmax', name='softmax'))
 
     if summary:
         print(model.summary())
