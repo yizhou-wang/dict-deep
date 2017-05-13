@@ -16,6 +16,7 @@ from os.path import isfile, join
 
 import cv2
 
+nfeatures = 100
 
 def readvideo(source):
 	cam = cv2.VideoCapture(source)
@@ -66,7 +67,7 @@ def subseq(imglist, N_sq):
 
 def orbkeypoint(img_frame):
 
-	orb = cv2.ORB(edgeThreshold=12, nfeatures=50)
+	orb = cv2.ORB(edgeThreshold=12, nfeatures=nfeatures)
 
 	current_image = img_frame
 	# print '%s %s %s'%('original','dimension',current_image.shape)

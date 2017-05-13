@@ -9,6 +9,14 @@ from sklearn.utils import shuffle
 import keras
 import mlp_utils
 import c3d_utils
+from keras import callbacks
+
+import time
+
+start_time = time.time()
+
+
+remote = callbacks.RemoteMonitor(root='http://localhost:9000')
 
 
 dataset_name = 'weizmann'
@@ -94,15 +102,17 @@ te_labels = keras.utils.to_categorical(Y_test, num_classes=label_dic_num)
 
 # Train the model, iterating on the data in batches of 32 samples
 print('Training Model ...')
-model_mlp.fit(X_train, tr_labels, epochs=30, batch_size=512)
+model_mlp.fit(X_train, tr_labels, epochs=50, batch_size=256, validation_data=(X_test, te_labels), callbacks=[remote])
 
 # model_mlp.evaluate(X_test, te_labels, batch_size=32)
 
+pre = model_mlp.predict(X_test)
 score = model_mlp.evaluate(X_test, te_labels, batch_size=32)
 print('\nTest Score:', score[1])
 
+print("--- %s seconds ---" % (time.time() - start_time))
 
-
+scipy.io.savemat('../results/pre.mat', {'te_labels': te_labels, 'pre': pre})
 
 ## Put original video into C3D networks ##
 # model_c3d = c3d_utils.get_model(summary=True)
